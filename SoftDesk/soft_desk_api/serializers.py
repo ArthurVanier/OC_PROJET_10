@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
-from .models import Project, Contributor
+from .models import Project, Contributor, Issue, Comment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,12 +24,25 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Project
         fields = ('id', 'title', 'description', 'p_type')
-        extra_kwargs = {
-            'author': {'read_only': True}
-        }
+        read_only_fields = ['id']
 
 class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = '__all__'
+        fields = ('id', 'project_id', 'user', 'role', 'permission')
+        read_only_fields = ['id', 'project_id']
+
+class IssuesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Issue
+        fields = ('id','project_id','title', 'description', 'author', 'created_time','attributed', 'priority', 'tag', 'status')
+        read_only_fields = ['id', 'project_id', 'author', 'created_time']
+
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'issue', 'author', 'description', 'created_time')
+        read_only_fields = ('id', 'issue', 'author', 'created_time')
