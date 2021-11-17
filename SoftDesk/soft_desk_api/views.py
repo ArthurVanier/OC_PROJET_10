@@ -1,3 +1,4 @@
+from itertools import chain
 from datetime import datetime
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
@@ -26,7 +27,7 @@ class Login(APIView):
             return Response(self.get_jwt_token(username, password), status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
     
-    def get_jwt_token(username, password):
+    def get_jwt_token(self, username, password):
         data = {"username": username, "password": password}
         res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
         return res
@@ -55,7 +56,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(author=self.request.user)
+        project_id_list = [query.project_id for query in Contributor.objects.filter(user=self.request.user)]
+        project_list = [self.queryset.filter(pk=id) for id in project_id_list]
+        return list(chain(*project_list))
+
+    
+    def retrieve(self, request, pk=None):
+        project = self.queryset.filter(pk=pk)
+        if Contributor.objects.filter(project_id=project[0].id, user=request.user).count() == 1:
+            return Response(ProjectSerializer(project[0]).data)
+        return Response("You do not have permission to perform this action.")
 
     def get_permissions(self):
         permission_classes = [IsAuthenticated]
@@ -74,8 +84,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 role="Project Manager",
                 permission="all"
             )
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, pk=None):
+        project = self.queryset.filter(pk=pk)
+        user_list = Contributor.objects.filter(project_id=pk)
+        issue_list = Issue.objects.filter(project_id=project)
+        comment_list_per_issue = [Comment.objects.filter(issue=issue) for issue in issue_list]
+        for comment_list in comment_list_per_issue:
+            comment_list.delete()
+        issue_list.delete()
+        user_list.delete()
+        project.delete()
+        return Response("Project, issues, users and comments where deleted", status=status.HTTP_200_OK)
 
 
 class ContributorsViewSet(viewsets.ModelViewSet):
@@ -119,6 +141,15 @@ class IssuesViewSet(viewsets.ModelViewSet):
             serializer.save(project_id=project, attributed=attributed, author=request.user, created_time=datetime.now())
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, projects_pk, pk=None):
+        issue = self.queryset.filter(pk=pk)
+        if not issue:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        comment_list = Comment.objects.filter(issue=issue[0])
+        comment_list.delete()
+        issue.delete()
+        return Response("Issue and its comment were succesfully deleted", status=status.HTTP_200_OK)
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
@@ -127,7 +158,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(issue=self.kwargs['issues_pk'])
-    
+
     def create(self, request, projects_pk, issues_pk):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():

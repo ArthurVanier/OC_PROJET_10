@@ -19,12 +19,12 @@ class UserSerializer(serializers.ModelSerializer):
         """
         return make_password(value)
 
-class ProjectSerializer(serializers.HyperlinkedModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ('id', 'title', 'description', 'p_type')
-        read_only_fields = ['id']
+        fields = ('id', 'author', 'title', 'description', 'p_type')
+        read_only_fields = ['id', 'author']
 
 class ContributorSerializer(serializers.ModelSerializer):
 
