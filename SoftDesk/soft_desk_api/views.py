@@ -29,14 +29,11 @@ class Login(APIView):
             res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
             return Response(res, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-<<<<<<< HEAD
-=======
     
     def get_jwt_token(self, username, password):
         data = {"username": username, "password": password}
         res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
         return res
->>>>>>> 34a97031b1ded265dd52f331e69a058c3e3400ec
 
 
 class CreateAccount(APIView):
@@ -62,11 +59,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
 
     def get_queryset(self):
-<<<<<<< HEAD
-        projects_id = [user.project_id for user in Contributor.objects.filter(user=self.request.user)]
-        projects = [self.queryset.filter(pk=id) for id in projects_id]
-        return list(chain(*projects))
-=======
         project_id_list = [query.project_id for query in Contributor.objects.filter(user=self.request.user)]
         project_list = [self.queryset.filter(pk=id) for id in project_id_list]
         return list(chain(*project_list))
@@ -74,10 +66,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     def retrieve(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
-        if Contributor.objects.filter(project_id=project[0].id, user=request.user).count() == 1:
-            return Response(ProjectSerializer(project[0]).data)
-        return Response("You do not have permission to perform this action.")
->>>>>>> 34a97031b1ded265dd52f331e69a058c3e3400ec
+        if project.count() == 1:
+            if Contributor.objects.filter(project_id=project.first().id, user=request.user).count() == 1:
+                return Response(ProjectSerializer(project.first()).data)
+            return Response("You do not have permission to perform this action.")
+        return Response('There is no project with this id')
 
     def get_permissions(self):
         permission_classes = [IsAuthenticated]
@@ -101,8 +94,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
+        if project.count() != 1:
+            return Response("Error there is no project with this id")
         user_list = Contributor.objects.filter(project_id=pk)
-        issue_list = Issue.objects.filter(project_id=project)
+        issue_list = Issue.objects.filter(project_id=project[0].id)
         comment_list_per_issue = [Comment.objects.filter(issue=issue) for issue in issue_list]
         for comment_list in comment_list_per_issue:
             comment_list.delete()

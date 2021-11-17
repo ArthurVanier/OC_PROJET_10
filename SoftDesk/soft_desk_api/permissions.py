@@ -11,10 +11,10 @@ class ProjectPermission(permissions.BasePermission):
 
         if obj.author == request.user:
             return True
-        
+
         if request.method == 'GET' and Contributor.objects.filter(project_id=obj.id, user=request.user).count() == 1:
             return True
-        
+
         return False
 
 class ContributorPermission(permissions.BasePermission):
@@ -23,7 +23,7 @@ class ContributorPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.is_superuser:
             return True
-        
+
         if request.method == 'DELETE':
             contributor = Contributor.objects.filter(project_id=view.kwargs.get('projects_pk', 0), user=request.user)
             if contributor.count() == 1 and (contributor[0].permission == "all" or contributor[0].permission.contain('delete')):
@@ -49,12 +49,12 @@ class IssuesPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.is_superuser:
             return True
-        
+
         if Contributor.objects.filter(project_id=view.kwargs.get('projects_pk', 0), user=request.user).count() == 1:
             return True
-        
+
         return False
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method == 'DELETE':
             if obj.author == request.user:
@@ -67,7 +67,7 @@ class IssuesPermission(permissions.BasePermission):
                 return True
             else:
                 return False
-        
+
         if Contributor.objects.filter(project_id=view.kwargs.get('projects_pk', 0), user=request.user).count() == 1:
             return True
 
