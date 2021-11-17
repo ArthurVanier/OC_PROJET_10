@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import chain
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -23,13 +24,10 @@ class Login(APIView):
         if serializer.is_valid:
             username = serializer.data['username']
             password = serializer.data['password']
-            return Response(self.get_jwt_token(username, password), status=status.HTTP_200_OK)
+            data = {"username": username, "password": password}
+            res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
+            return Response(res, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-    
-    def get_jwt_token(username, password):
-        data = {"username": username, "password": password}
-        res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
-        return res
 
 
 class CreateAccount(APIView):
@@ -55,7 +53,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(author=self.request.user)
+        projects_id = [user.project_id for user in Contributor.objects.filter(user=self.request.user)]
+        projects = [self.queryset.filter(pk=id) for id in projects_id]
+        return list(chain(*projects))
 
     def get_permissions(self):
         permission_classes = [IsAuthenticated]
