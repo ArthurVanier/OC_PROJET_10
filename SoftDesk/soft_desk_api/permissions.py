@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from .models import Contributor
 
+
 class ProjectPermission(permissions.BasePermission):
 
     edit_methods = ('GET', 'PUT', 'DELETE')
@@ -17,9 +18,11 @@ class ProjectPermission(permissions.BasePermission):
 
         return False
 
+
 class ContributorPermission(permissions.BasePermission):
 
     edit_methods = ('GET', 'POST', 'PUT', 'DELETE')
+
     def has_permission(self, request, view):
         if request.user.is_superuser:
             return True
@@ -35,12 +38,13 @@ class ContributorPermission(permissions.BasePermission):
             return True
 
         return False
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method == 'DELETE':
             return True
         else:
             return False
+
 
 class IssuesPermission(permissions.BasePermission):
 
@@ -61,7 +65,7 @@ class IssuesPermission(permissions.BasePermission):
                 return True
             else:
                 return False
-        
+
         if request.method == 'PUT':
             if obj.author == request.user or obj.attributed == request.user:
                 return True
@@ -73,6 +77,7 @@ class IssuesPermission(permissions.BasePermission):
 
         return False
 
+
 class CommentPermission(permissions.BasePermission):
     edit_methods = ('GET', 'POST', 'PUT', 'DELETE')
 
@@ -82,22 +87,22 @@ class CommentPermission(permissions.BasePermission):
 
         if Contributor.objects.filter(project_id=view.kwargs.get('projects_pk', 0), user=request.user).count() == 1:
             return True
-        
+
         return False
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method == 'DELETE':
             if obj.author == request.user:
                 return True
             else:
                 return False
-        
+
         if request.method == 'PUT':
             if obj.author == request.user:
                 return True
             else:
                 return False
-        
+
         if Contributor.objects.filter(project_id=view.kwargs.get('projects_pk', 0), user=request.user).count() == 1:
             return True
 

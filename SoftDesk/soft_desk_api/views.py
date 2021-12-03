@@ -1,4 +1,3 @@
-from itertools import chain
 from datetime import datetime
 from itertools import chain
 from django.shortcuts import get_object_or_404
@@ -29,11 +28,6 @@ class Login(APIView):
             res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
             return Response(res, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-    
-    def get_jwt_token(self, username, password):
-        data = {"username": username, "password": password}
-        res = requests.post('http://127.0.0.1:8000/jwt/get_token/', data=data).json()
-        return res
 
 
 class CreateAccount(APIView):
@@ -42,7 +36,7 @@ class CreateAccount(APIView):
 
     def get(self, request):
         return Response()
-    
+
     def post(self, request):
         serializer = UserSerializer(request.data)
         if serializer.is_valid:
@@ -63,7 +57,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_list = [self.queryset.filter(pk=id) for id in project_id_list]
         return list(chain(*project_list))
 
-    
     def retrieve(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
         if project.count() == 1:
@@ -91,7 +84,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-    
+
     def destroy(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
         if project.count() != 1:
@@ -121,7 +114,7 @@ class ContributorsViewSet(viewsets.ModelViewSet):
             serializer.save(project_id=projects_pk)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-    
+
     def destroy(self, request, projects_pk, pk):
         contributor = get_object_or_404(Contributor, project_id=projects_pk, user=pk)
         if contributor:
@@ -148,7 +141,7 @@ class IssuesViewSet(viewsets.ModelViewSet):
             serializer.save(project_id=project, attributed=attributed, author=request.user, created_time=datetime.now())
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response("Invalid data provided", status=status.HTTP_400_BAD_REQUEST)
-    
+
     def destroy(self, request, projects_pk, pk=None):
         issue = self.queryset.filter(pk=pk)
         if not issue:
@@ -157,6 +150,7 @@ class IssuesViewSet(viewsets.ModelViewSet):
         comment_list.delete()
         issue.delete()
         return Response("Issue and its comment were succesfully deleted", status=status.HTTP_200_OK)
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer

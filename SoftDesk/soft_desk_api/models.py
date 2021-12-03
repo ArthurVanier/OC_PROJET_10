@@ -8,6 +8,7 @@ class Project(models.Model):
     p_type = models.CharField(max_length=32)
     author = models.ForeignKey(to=User, on_delete=models.CASCADE)
 
+
 class Contributor(models.Model):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
     project_id = models.IntegerField()
@@ -16,10 +17,11 @@ class Contributor(models.Model):
 
 
 CHOICE_PRIORITY = [
-    ('LOW','L'),
+    ('LOW', 'L'),
     ('MEDIUM', 'M'),
     ('HIGH', 'H')
 ]
+
 
 CHOICE_TAG = [
     ('BUG', 'B'),
@@ -27,11 +29,14 @@ CHOICE_TAG = [
     ('TASK', 'T'),
 ]
 
-CHOICE_STATUS=[
+
+CHOICE_STATUS = [
     ('TODO', 'T'),
     ('IN_PROGESS', 'P'),
     ('DONE', 'D'),
 ]
+
+
 class Issue(models.Model):
     project_id = models.ForeignKey(to=Project, on_delete=models.CASCADE)
     title = models.CharField(max_length=64)
@@ -39,10 +44,11 @@ class Issue(models.Model):
     author = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="author")
     attributed = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="attributed")
     created_time = models.DateTimeField()
-    
+
     priority = models.CharField(max_length=16, choices=CHOICE_PRIORITY)
     tag = models.CharField(max_length=16, choices=CHOICE_TAG)
     status = models.CharField(max_length=16, choices=CHOICE_STATUS)
+
 
 class Comment(models.Model):
     issue = models.ForeignKey(to=Issue, on_delete=models.CASCADE)
