@@ -59,7 +59,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_list = [self.queryset.filter(pk=id) for id in project_id_list]
         return list(chain(*project_list))
 
-<<<<<<< HEAD
     def update(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
         if project.exists():
@@ -73,8 +72,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 return Response(ProjectSerializer(project).data)
         return Response("Error")
 
-=======
->>>>>>> e42b77e7b08b0c071984eed11f9e88c263a15cfb
     def retrieve(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
         if project.count() == 1:

@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from rest_framework import permissions
 from .models import Contributor, Project
 
@@ -14,6 +15,9 @@ class ProjectPermission(permissions.BasePermission):
             return True
 
         project = Project.objects.filter(pk=view.kwargs.get('pk'))
+        if request.method == 'GET' and project.count() == 0:
+            return True
+
         if project.count() == 1:
             if request.user == project[0].author:
                 return True
