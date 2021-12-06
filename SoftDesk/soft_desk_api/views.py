@@ -1,6 +1,7 @@
 from itertools import chain
 from datetime import datetime
 from itertools import chain
+from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -57,13 +58,26 @@ class CreateAccount(APIView):
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
+    permission_classes = (ProjectPermission,)
 
     def get_queryset(self):
         project_id_list = [query.project_id for query in Contributor.objects.filter(user=self.request.user)]
         project_list = [self.queryset.filter(pk=id) for id in project_id_list]
         return list(chain(*project_list))
 
-    
+    def update(self, request, pk=None):
+        project = self.queryset.filter(pk=pk)
+        if project.exists():
+            project = project[0]
+            serializer = ProjectSerializer(data=request.data)
+            if serializer.is_valid():
+                project.title = serializer.validated_data['title']
+                project.description = serializer.validated_data['description']
+                project.p_type = serializer.validated_data['p_type']
+                project.save()
+                return Response(ProjectSerializer(project).data)
+        return Response("Error")
+
     def retrieve(self, request, pk=None):
         project = self.queryset.filter(pk=pk)
         if project.count() == 1:
@@ -71,13 +85,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 return Response(ProjectSerializer(project.first()).data)
             return Response("You do not have permission to perform this action.")
         return Response('There is no project with this id')
-
-    def get_permissions(self):
-        permission_classes = [IsAuthenticated]
-        if self.action == 'list' or self.action == 'retrieve' or self.action == 'update' or self.action == 'destroy':
-            permission_classes.append(ProjectPermission)
-
-        return [permission() for permission in permission_classes]
 
     def create(self, request):
         serializer = ProjectSerializer(data=request.data)

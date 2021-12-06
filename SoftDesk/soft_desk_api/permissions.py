@@ -1,9 +1,24 @@
 from rest_framework import permissions
-from .models import Contributor
+from .models import Contributor, Project
 
 class ProjectPermission(permissions.BasePermission):
 
     edit_methods = ('GET', 'PUT', 'DELETE')
+
+    def has_permission(self, request, view):
+        if request.user.is_superuser:
+            return True
+
+        if request.method == 'GET' and Contributor.objects.filter(project_id=view.kwargs.get('pk'), user=request.user).count() == 1:
+            return True
+
+        project = Project.objects.filter(pk=view.kwargs.get('pk'))
+        if project.count() == 1:
+            if request.user == project[0].author:
+                return True
+
+        return False
+
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
@@ -35,7 +50,7 @@ class ContributorPermission(permissions.BasePermission):
             return True
 
         return False
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method == 'DELETE':
             return True
